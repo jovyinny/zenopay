@@ -35,7 +35,13 @@ zenopay_client.api_key=os.getenv('ZENOPAY_API_KEY')
 zenopay_client.secret_key=os.getenv('ZENOPAY_SECRET_KEY')
 
 # Data to be sent to Zenopay
-data={"buyer_name":"jovine me","buyer_phone":"0718193343","buyer_email":"jovinerobotics@gmail.com","amount":1000,"webhook_url":"https://jovine.me/zenopay/webhook"}
+data = {
+    "buyer_name": "jovine me",
+    "buyer_phone": "0718193343",
+    "buyer_email": "jovinerobotics@gmail.com",
+    "amount": 1000,
+    "webhook_url": "https://jovine.me/zenopay/webhook",
+}
 
 # Initiate a mobile checkout
 checkout=zenopay_client.mobile_checkout(data)
@@ -54,7 +60,16 @@ zenopay_client.api_key=os.getenv('ZENOPAY_API_KEY')
 zenopay_client.secret_key=os.getenv('ZENOPAY_SECRET_KEY')
 
 # Data to be sent to Zenopay
-data={"buyer_name":"jovine me","buyer_phone":"0718193343","buyer_email":"jovinerobotics@gmail.com","amount":1000,"webhook_url":"https://jovine.me/zenopay/webhook","billling_country":"TZ","redirect_url":"https://jovine.me/zenopay/redirect"}
+
+data = {
+    "buyer_name": "jovine me",
+    "buyer_phone": "0718193343",
+    "buyer_email": "jovinerobotics@gmail.com",
+    "amount": 1000,
+    "webhook_url": "https://jovine.me/zenopay/webhook",
+    "billling_country": "TZ",
+    "redirect_url": "https://jovine.me/zenopay/redirect",
+}
 
 # Initiate a card checkout
 checkout=zenopay_client.card_checkout(data)
