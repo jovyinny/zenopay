@@ -155,14 +155,23 @@ class ZenoPay:
             logging.exception(msg)
             return {"success": False, "message": "Error handling the request."}
 
-    def mobile_payment(self, data: Union[dict, BaseCheckoutSchema]) -> dict:
+    def mobile_checkout(self, data: Union[dict, CheckoutSchema]) -> dict:
         """Initiate Mobile paymennt.
 
         Args:
-            data: Union[dict, BaseCheckoutSchema]
+            data: Union[dict, CheckoutSchema]
 
         Returns:
             Response: dict
+
+        Example:
+        >>> from zenopay import ZenoPay
+        >>> zenopay = ZenoPay(account_id="zpxxxx")
+        >>> zenopay.api_key= ""
+        >>> zenopay.secret_key = ""
+        >>> data={"buyer_name":"jovine me","buyer_phone":"071xxxxxxx","buyer_email":"jovinexxxxxx@gmail.com","amount":1000}
+        >>> zenopay.mobile_checkout(data)
+        >>> {'status': 'success', 'message': 'Wallet payment successful', 'order_id': '6777ad7e327xxx'}
 
         """
         if not all([self.api_key, self.secret_key]):
@@ -170,8 +179,8 @@ class ZenoPay:
             raise ValueError(msg)
         data = (
             data.model_dump(exclude_none=True)
-            if isinstance(data, BaseCheckoutSchema)
-            else BaseCheckoutSchema(**data).model_dump(exclude_none=True)
+            if isinstance(data, CheckoutSchema)
+            else CheckoutSchema(**data).model_dump(exclude_none=True)
         )
         data.update(
             {
