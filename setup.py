@@ -8,8 +8,8 @@ with Path("README.md").open() as file:
     long_description = file.read()
 
 setup(
-    name="Zenopay",
-    version="0.0.4",
+    name="zenopay",
+    version="0.0.5",
     description="A Python wrapper for ZenoPay Payment API.",
     long_description=long_description,
     long_description_content_type="text/markdown",
