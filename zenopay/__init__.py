@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 
 
-class BaseCheckoutSchema(BaseModel):
+class CheckoutSchema(BaseModel):
     """Base Checkout Data Structure."""
 
     buyer_name: str
@@ -35,10 +35,10 @@ class BaseCheckoutSchema(BaseModel):
         return phonenumbers.format_number(
             phone_number,
             phonenumbers.PhoneNumberFormat.E164,
-        )
+        ).removeprefix("+")
 
 
-class CardPaymentSchema(BaseCheckoutSchema):
+class CardPaymentSchema(CheckoutSchema):
     """Card Payment Data schema."""
 
     redirect_url: Optional[Union[str, HttpUrl]] = None
@@ -107,7 +107,14 @@ class ZenoPay:
             msg = f"Expected str type but received {type(value)}"
             raise TypeError(msg)
 
-    def post(self, url: str, data: dict, headers: Optional[dict] = None) -> dict:
+    def post(
+        self,
+        url: str,
+        data: dict,
+        *,
+        is_json: bool = False,
+        headers: Optional[dict] = None,
+    ) -> dict:
         """Handle post Request.
 
         Args:
@@ -119,14 +126,26 @@ class ZenoPay:
             dict
 
         """
+        headers = headers if headers else self.headers
+        # Remove None values
+        data = {k: v for k, v in data.items() if v}
+        print(data)
         try:
-            headers = headers if headers else self.headers
             with requests.Session() as session:
-                response = session.post(
-                    url=url,
-                    headers=headers,
-                    data=data,
-                    timeout=self.TIMEOUT,
+                response = (
+                    session.post(
+                        url=url,
+                        headers=headers,
+                        json=data,
+                        timeout=self.TIMEOUT,
+                    )
+                    if is_json
+                    else session.post(
+                        url=url,
+                        headers=headers,
+                        data=data,
+                        timeout=self.TIMEOUT,
+                    )
                 )
                 response.raise_for_status()
 
