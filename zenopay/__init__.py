@@ -192,34 +192,6 @@ class ZenoPay:
         )
         return self.post(url=str(self.BASE_URL), data=data)
 
-    def check_order_status(self, order_id: str) -> dict:
-        """Check Order Status.
-
-        Args:
-            order_id: str
-
-        Returns:
-            response: dict ->
-
-        Example:
-        >>> from zenopay import ZenoPay
-        >>> zenopay = ZenoPay(account_id="zpxxxx")
-        >>> status= zenopay.check_order_status(order_id="12121212")
-        >>> {"status": "success","order_id": "order_id","message": "Order status updated","payment_status": "PENDING"}
-
-        """
-        if not isinstance(order_id, str):
-            msg = f"Expected str type but received {type(order_id)}"
-            raise TypeError(msg)
-        url = str(self.BASE_URL) + "/order-status"
-        data = {
-            "check_status": 1,
-            "order_id": order_id,
-            "api_key": self.api_key,
-            "secret_key": self.secret_key,
-        }
-        return self.post(url=url, data=data)
-
     def card_checkout(self, data: Union[dict, CardPaymentSchema]) -> dict:
         """Initiate Card Payment.
 
@@ -250,3 +222,31 @@ class ZenoPay:
             },
         )
         return self.post(url=url, data=data, is_json=True, headers=headers)
+
+    def check_order_status(self, order_id: str) -> dict:
+        """Check Order Status.
+
+        Args:
+            order_id: str
+
+        Returns:
+            response: dict ->
+
+        Example:
+        >>> from zenopay import ZenoPay
+        >>> zenopay = ZenoPay(account_id="zpxxxx")
+        >>> status= zenopay.check_order_status(order_id="12121212")
+        >>> {"status": "success","order_id": "order_id","message": "Order status updated","payment_status": "PENDING"}
+
+        """
+        if not isinstance(order_id, str):
+            msg = f"Expected str type but received {type(order_id)}"
+            raise TypeError(msg)
+        url = str(self.BASE_URL) + "/order-status"
+        data = {
+            "check_status": 1,
+            "order_id": order_id,
+            "api_key": self.api_key,
+            "secret_key": self.secret_key,
+        }
+        return self.post(url=url, data=data)
