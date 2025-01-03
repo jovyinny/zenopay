@@ -6,7 +6,6 @@ from typing import Optional, Union
 import phonenumbers
 import requests
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_validator
-from pydantic_extra_types.phone_numbers import PhoneNumber
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,7 +17,7 @@ class CheckoutSchema(BaseModel):
     """Base Checkout Data Structure."""
 
     buyer_name: str
-    buyer_phone: Union[str, PhoneNumber]
+    buyer_phone: str
     buyer_email: EmailStr
     amount: float = Field(ge=10)
     webhook_url: Optional[Union[str, HttpUrl]] = None
