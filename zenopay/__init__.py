@@ -252,3 +252,6 @@ class ZenoPay:
             "secret_key": self.secret_key,
         }
         return self.post(url=url, data=data)
+
+
+__all__ = ["ZenoPay"]
