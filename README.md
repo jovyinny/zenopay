@@ -2,7 +2,7 @@
 
 Python Wrapper to Zenopay Payment. This wrapper is a simple way to interact with Zenopay Payment API.
 
-You can get you account and API key from [Zenopay](https://zenopay.com/). You will need to have an account to access the API.
+You can get you account and API key from [Zenopay](https://zeno.co.tz/). You will need to have an account to access the API.
 
 ## Installation
 
