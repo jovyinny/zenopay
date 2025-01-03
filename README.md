@@ -61,8 +61,10 @@ checkout=zenopay_client.card_checkout(data)
 
 # Print the response
 print(checkout)
-#{'status': 'success', 'message': 'Order created successfully', 'order_id': 'xxxxx', 'payment_link': 'https://secure.payment.tz/link'}
+#{'status': 'success', 'message': 'Order created successfully', 'order_id': '6777ad7e327xxx', 'payment_link': 'https://secure.payment.tz/link'}
 ```
+
+You can keep record of the `order_id` to easily keep track of order and update details in case of a callback as the `order_id` will be sent in the callback.
 
 ### Check Order Status
 
@@ -71,30 +73,57 @@ status=zenopay_client.check_order_status(order_id="xxxxx")
 
 # Print the response
 print(status)
-#{"status": "success","order_id": "order_id","message": "Order status updated","payment_status": "PENDING"}
+#{"status": "success","order_id": "6777ad7e327xxx","message": "Order status updated","payment_status": "PENDING"}
 ```
 
 ## Callbacks
 
 As highlighted above, you need to set a webhook url when initiating a mobile checkout. Zenopay will send a POST request to the webhook url with the transaction details. You can use the following code to handle the callback.
 
-```python
-from flask import Flask, request, jsonify
+Sample callback code using Flask and FastAPI. The callback request JSON sample is as follows:
 
-app = Flask(__name__)
-
-@app.route('/zenopay/webhook', methods=['POST'])
-def webhook():
-    data = request.json
-    # Do something with the data
-    print(data)
-    # You can save the data to a database
-    return jsonify({"status":"success"})
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+```json
+    {
+        "order_id":"6777ad7e327xxx",
+        "payment_status":"COMPLETED",
+        "reference":"0882061614"
+    }
 ```
+
+- Flask
+
+    ```python
+    from flask import Flask, request, jsonify
+
+    app = Flask(__name__)
+
+    @app.route('/zenopay/webhook', methods=['POST'])
+    def webhook():
+        data = request.json
+        # Do something with the data
+        print(data)
+        # You can save the data to a database
+        return jsonify({"status":"success"})
+
+    ```
+
+- FastAPI
+
+    ```python
+    from fastapi import FastAPI, Request
+    from fastapi.responses import JSONResponse
+
+    app = FastAPI()
+
+    @app.post("/zenopay/webhook")
+    async def webhook(request: Request):
+        data = await request.json()
+        # Do something with the data
+        print(data)
+        # You can save the data to a database
+        return JSONResponse(content={"status":"success"})
+
+    ```
 
 ## Redirects and Cancel URLs
 
