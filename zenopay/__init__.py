@@ -208,6 +208,9 @@ class ZenoPay:
         >>> {'status': 'success', 'message': 'Order created successfully', 'order_id': 'xxxxx', 'payment_link': 'https://secure.payment.tz/link'}
 
         """
+        if not all([self.api_key, self.secret_key]):
+            msg = "You must have api key and secret key set."
+            raise ValueError(msg)
         _data = CardPaymentSchema(**data) if isinstance(data, dict) else data
         url = str(self.BASE_URL) + "/card"
         data = _data.model_dump(exclude_none=True)
