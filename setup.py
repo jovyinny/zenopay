@@ -2,20 +2,18 @@
 
 from pathlib import Path
 
-from setuptools import find_packages, setup
+from setuptools import setup
 
 with Path("README.md").open() as file:
     long_description = file.read()
 
 setup(
     name="Zenopay",
-    version="0.0.2",
+    version="0.0.4",
     description="A Python wrapper for ZenoPay Payment API.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/jovyinny/zenopay",
-    package_dir={"": "zenopay"},
-    packages=find_packages(where="zenopay"),
     author="Jovine Mutelani",
     author_email="jovinerobotics@gmail.com",
     license="MIT",
