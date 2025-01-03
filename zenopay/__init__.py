@@ -220,11 +220,27 @@ class ZenoPay:
         }
         return self.post(url=url, data=data)
 
-    def card_payment(self, data: Union[dict, CardPaymentSchema]) -> dict:
-        """Initiate Card Payment."""
+    def card_checkout(self, data: Union[dict, CardPaymentSchema]) -> dict:
+        """Initiate Card Payment.
+
+        Args:
+            data: Union[dict, CardPaymentSchema]
+
+        Returns:
+            response: dict
+
+        Example:
+        >>> from zenopay import ZenoPay
+        >>> zenopay = ZenoPay(account_id="zpxxxx")
+        >>> data={"buyer_name":"jovine me","buyer_phone":"071xxxxxxx","buyer_email":"jovinexxxxxx@gmail.com","amount":1000}
+        >>> zenopay.card_checkout(data)
+        >>> {'status': 'success', 'message': 'Order created successfully', 'order_id': 'xxxxx', 'payment_link': 'https://secure.payment.tz/link'}
+
+        """
         _data = CardPaymentSchema(**data) if isinstance(data, dict) else data
         url = str(self.BASE_URL) + "/card"
         data = _data.model_dump(exclude_none=True)
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
         data.update(
             {
                 "billing.country": _data.billing_country,
@@ -233,4 +249,4 @@ class ZenoPay:
                 "secret_key": self.secret_key,
             },
         )
-        return self.post(url=url, data=data)
+        return self.post(url=url, data=data, is_json=True, headers=headers)
