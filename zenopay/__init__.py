@@ -26,11 +26,8 @@ class BaseCheckoutSchema(BaseModel):
     @field_validator("buyer_phone")
     def validate_phone_number(cls, value: str) -> Optional[str]:
         """Check phone number field."""
-        try:
-            phone_number = value if isinstance(value, str) else str(value)
-            phone_number = phonenumbers.parse(value, "TZ")
-        except phonenumbers.phonenumberutil.NumberParseException:
-            phone_number = phonenumbers.parse(value, None)
+        phone_number = value if isinstance(value, str) else str(value)
+        phone_number = phonenumbers.parse(value, "TZ")
 
         if not phonenumbers.is_valid_number(phone_number):
             msg = "Invalid phone number"
