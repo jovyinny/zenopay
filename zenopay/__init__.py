@@ -120,6 +120,7 @@ class ZenoPay:
         Args:
             url: str
             data: dict
+            is_json:bool= False, whether data is to be sent as JSON
             headers: Optional[dict], if not provided uses default headers.
 
         Returns:
@@ -129,7 +130,6 @@ class ZenoPay:
         headers = headers if headers else self.headers
         # Remove None values
         data = {k: v for k, v in data.items() if v}
-        print(data)
         try:
             with requests.Session() as session:
                 response = (
