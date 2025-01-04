@@ -9,7 +9,7 @@ with Path("README.md").open() as file:
 
 setup(
     name="zenopay",
-    version="0.0.6",
+    version="0.0.7",
     description="A Python wrapper for ZenoPay Payment API.",
     long_description=long_description,
     long_description_content_type="text/markdown",
