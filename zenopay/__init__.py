@@ -1,11 +1,13 @@
 """ZenoPay."""
 
+from __future__ import annotations
+
 import logging
-from typing import Optional, Union
+import re
 
 import phonenumbers
 import requests
-from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,12 +20,21 @@ class CheckoutSchema(BaseModel):
 
     buyer_name: str
     buyer_phone: str
-    buyer_email: EmailStr
+    buyer_email: str
     amount: float = Field(ge=10)
-    webhook_url: Optional[Union[str, HttpUrl]] = None
+    webhook_url: HttpUrl | str | None = None
+
+    @field_validator("buyer_email")
+    def validate_email(cls, value: str) -> str:
+        """Check email."""
+        email_pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+        if re.match(email_pattern, value):
+            return value
+        msg = "Invalid Email Provided."
+        raise ValueError(msg)
 
     @field_validator("buyer_phone")
-    def validate_phone_number(cls, value: str) -> Optional[str]:
+    def validate_phone_number(cls, value: str) -> str | None:
         """Check phone number field."""
         phone_number = value if isinstance(value, str) else str(value)
         phone_number = phonenumbers.parse(value, "TZ")
@@ -36,19 +47,27 @@ class CheckoutSchema(BaseModel):
             phonenumbers.PhoneNumberFormat.E164,
         ).removeprefix("+")
 
+    @classmethod
+    def validate_amount(cls, value: float) -> float:
+        """Check amopunt."""
+        if isinstance(value, (int, float)):
+            return float(value)
+        msg = f"Expected value of type int/float but got {type(value)}"
+        raise TypeError(msg)
+
 
 class CardPaymentSchema(CheckoutSchema):
     """Card Payment Data schema."""
 
-    redirect_url: Optional[Union[str, HttpUrl]] = None
-    cancel_url: Optional[Union[str, HttpUrl]] = None
+    redirect_url: str | HttpUrl | None = None
+    cancel_url: str | HttpUrl | None = None
     billing_country: str = Field(max_length=2, default="TZ")
 
 
 class ZenoPay:
     """ZenoPay Client."""
 
-    BASE_URL: Union[str, HttpUrl] = HttpUrl("https://api.zeno.africa")
+    BASE_URL: str | HttpUrl = HttpUrl("https://api.zeno.africa")
     BASE_URL = BASE_URL if isinstance(BASE_URL, HttpUrl) else HttpUrl(BASE_URL)
     TIMEOUT: int = 5
 
@@ -71,7 +90,7 @@ class ZenoPay:
         self._secret_key = None
 
     @property
-    def api_key(self) -> Optional[str]:
+    def api_key(self) -> str | None:
         """Client API Key."""
         return self._api_key
 
@@ -85,7 +104,7 @@ class ZenoPay:
             raise TypeError(msg)
 
     @property
-    def secret_key(self) -> Optional[str]:
+    def secret_key(self) -> str | None:
         """Client API Key."""
         return self._secret_key
 
@@ -112,7 +131,7 @@ class ZenoPay:
         data: dict,
         *,
         is_json: bool = False,
-        headers: Optional[dict] = None,
+        headers: dict | None = None,
     ) -> dict:
         """Handle post Request.
 
@@ -154,7 +173,7 @@ class ZenoPay:
             logging.exception(msg)
             return {"success": False, "message": "Error handling the request."}
 
-    def mobile_checkout(self, data: Union[dict, CheckoutSchema]) -> dict:
+    def mobile_checkout(self, data: dict | CheckoutSchema) -> dict:
         """Initiate Mobile paymennt.
 
         Args:
@@ -191,7 +210,7 @@ class ZenoPay:
         )
         return self.post(url=str(self.BASE_URL), data=data)
 
-    def card_checkout(self, data: Union[dict, CardPaymentSchema]) -> dict:
+    def card_checkout(self, data: dict | CardPaymentSchema) -> dict:
         """Initiate Card Payment.
 
         Args:
