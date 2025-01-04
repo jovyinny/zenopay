@@ -23,7 +23,7 @@ setup(
         "zeno pay SDK",
         "ZenoPay Wrapper",
     ],
-    python_requires=">=3.9",
+    python_requires=">=3.7",
     install_requires=["requests", "phonenumbers", "pydantic"],
     classifiers=[
         "Development Status :: 3 - Alpha",
