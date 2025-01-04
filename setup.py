@@ -9,7 +9,7 @@ with Path("README.md").open() as file:
 
 setup(
     name="zenopay",
-    version="0.0.5",
+    version="0.0.6",
     description="A Python wrapper for ZenoPay Payment API.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -23,6 +23,11 @@ setup(
         "zeno pay SDK",
         "ZenoPay Wrapper",
     ],
+    project_urls={
+        "Bug Tracker": "https://github.com/jovyinny/zenopay/issues",
+        "Documentation": "https://jovyinny.github.io/zenopay/",
+        "Source Code": "https://github.com/jovyinny/zenopay",
+    },
     python_requires=">=3.7",
     install_requires=["requests", "phonenumbers", "pydantic"],
     classifiers=[
