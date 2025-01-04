@@ -24,7 +24,7 @@ setup(
         "ZenoPay Wrapper",
     ],
     python_requires=">=3.9",
-    install_requires=["requests", "phonenumbers", "pydantic", "email_validator"],
+    install_requires=["requests", "phonenumbers", "pydantic"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
