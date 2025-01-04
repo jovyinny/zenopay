@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 with Path("README.md").open() as file:
     long_description = file.read()
@@ -16,6 +16,7 @@ setup(
     url="https://github.com/jovyinny/zenopay",
     author="Jovine Mutelani",
     author_email="jovinerobotics@gmail.com",
+    packages=find_packages(exclude=["tests", "tests.*"]),
     license="MIT",
     keywords=[
         "zenopay",
