@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 
 import phonenumbers
 import requests
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, model_validator
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,8 +24,9 @@ class CheckoutSchema(BaseModel):
     buyer_email: str
     amount: float = Field(ge=10)
     webhook_url: HttpUrl | str | None = None
+    metadata: dict | None = None
 
-    @field_validator("buyer_email")
+    @classmethod
     def validate_email(cls, value: str) -> str:
         """Check email."""
         email_pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
@@ -33,7 +35,7 @@ class CheckoutSchema(BaseModel):
         msg = "Invalid Email Provided."
         raise ValueError(msg)
 
-    @field_validator("buyer_phone")
+    @classmethod
     def validate_phone_number(cls, value: str) -> str | None:
         """Check phone number field."""
         phone_number = value if isinstance(value, str) else str(value)
@@ -47,13 +49,18 @@ class CheckoutSchema(BaseModel):
             phonenumbers.PhoneNumberFormat.E164,
         ).removeprefix("+")
 
-    @classmethod
-    def validate_amount(cls, value: float) -> float:
-        """Check amopunt."""
-        if isinstance(value, (int, float)):
-            return float(value)
-        msg = f"Expected value of type int/float but got {type(value)}"
-        raise TypeError(msg)
+    @model_validator(mode="before")
+    def pre_data_validation(self) -> dict:
+        """Pre Data validation."""
+        self["buyer_email"] = CheckoutSchema.validate_email(self["buyer_email"])
+        self["buyer_phone"] = CheckoutSchema.validate_phone_number(self["buyer_phone"])
+        if url := self["webhook_url"]:
+            url = url if isinstance(url, HttpUrl) else HttpUrl(url)
+            if url.scheme != "https":
+                msg = "Url should have a https scheme."
+                raise ValueError(msg)
+            self["webhook_url"] = str(url)
+        return self
 
 
 class CardPaymentSchema(CheckoutSchema):
@@ -222,7 +229,7 @@ class ZenoPay:
         Example:
         >>> from zenopay import ZenoPay
         >>> zenopay = ZenoPay(account_id="zpxxxx")
-        >>> data={"buyer_name":"jovine me","buyer_phone":"071xxxxxxx","buyer_email":"jovinexxxxxx@gmail.com","amount":1000}
+        >>> data={"buyer_name":"jovine me","buyer_phone":"071xxxxxxx","buyer_email":"jovinexxxxxx@gmail.com","amount":1000,"metadata":{"product_id": "12345","color": "blue","size": "L","custom_notes": "Please gift-wrap this item."}}
         >>> zenopay.card_checkout(data)
         >>> {'status': 'success', 'message': 'Order created successfully', 'order_id': 'xxxxx', 'payment_link': 'https://secure.payment.tz/link'}
 
@@ -240,6 +247,9 @@ class ZenoPay:
                 "account_id": self.account_id,
                 "api_key": self.api_key,
                 "secret_key": self.secret_key,
+                "metadata": json.dumps(data["metadata"])
+                if data.get("metadata")
+                else None,
             },
         )
         return self.post(url=url, data=data, is_json=True, headers=headers)
@@ -273,4 +283,18 @@ class ZenoPay:
         return self.post(url=url, data=data)
 
 
-__all__ = ["ZenoPay"]
+# data = {
+#     "buyer_name": "jovine me",
+#     "buyer_phone": "0718193343",
+#     "buyer_email": "jovinerobotics@gmail.com",
+#     "amount": 1000,
+#     "webhook_url": "https://jovine.me/zenopay/webhook",
+#     "billling_country": "TZ",
+#     "redirect_url": "https://jovine.me/zenopay/redirect",
+#     "metadata": {
+#         "product_id": "12345",
+#         "color": "blue",
+#         "size": "L",
+#         "custom_notes": "Please gift-wrap this item.",
+#     },
+# }
