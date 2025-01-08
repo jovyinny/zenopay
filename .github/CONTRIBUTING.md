@@ -6,6 +6,8 @@ We welcome contributions to the Zenopay Python SDK. To contribute to this projec
 
 If you find a bug in the code or have a feature request, please open an issue on the repository. Just click on the Issues tab and click on the New Issue button. Select the type of issue you are creating, write a title and description, and click Submit new issue.
 
+Ensure the bug was not already reported by searching on GitHub under Issues.
+
 ## Changes
 
 1. Fork the repository
