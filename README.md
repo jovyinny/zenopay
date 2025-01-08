@@ -41,6 +41,12 @@ data = {
     "buyer_email": "jovinerobotics@gmail.com",
     "amount": 1000,
     "webhook_url": "https://jovine.me/zenopay/webhook",
+    "metadata":{
+        "product_id": "12345",
+        "color": "blue",
+        "size": "L",
+        "custom_notes": "Please gift-wrap this item."
+    },
 }
 
 # Initiate a mobile checkout
@@ -69,6 +75,12 @@ data = {
     "webhook_url": "https://jovine.me/zenopay/webhook",
     "billling_country": "TZ",
     "redirect_url": "https://jovine.me/zenopay/redirect",
+    "metadata":{
+        "product_id": "12345",
+        "color": "blue",
+        "size": "L",
+        "custom_notes": "Please gift-wrap this item."
+    },
 }
 
 # Initiate a card checkout
@@ -101,7 +113,13 @@ Sample callback code using Flask and FastAPI. The callback request JSON sample i
     {
         "order_id":"6777ad7e327xxx",
         "payment_status":"COMPLETED",
-        "reference":"0882061614"
+        "reference":"0882061614",
+        "matadata":{
+        "product_id": "12345",
+        "color": "blue",
+        "size": "L",
+        "custom_notes": "Please gift-wrap this item."
+    },
     }
 ```
 
