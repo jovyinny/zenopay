@@ -281,20 +281,3 @@ class ZenoPay:
             "secret_key": self.secret_key,
         }
         return self.post(url=url, data=data)
-
-
-# data = {
-#     "buyer_name": "jovine me",
-#     "buyer_phone": "0718193343",
-#     "buyer_email": "jovinerobotics@gmail.com",
-#     "amount": 1000,
-#     "webhook_url": "https://jovine.me/zenopay/webhook",
-#     "billling_country": "TZ",
-#     "redirect_url": "https://jovine.me/zenopay/redirect",
-#     "metadata": {
-#         "product_id": "12345",
-#         "color": "blue",
-#         "size": "L",
-#         "custom_notes": "Please gift-wrap this item.",
-#     },
-# }
