@@ -110,17 +110,17 @@ As highlighted above, you need to set a webhook url when initiating a mobile che
 Sample callback code using Flask and FastAPI. The callback request JSON sample is as follows:
 
 ```json
-    {
-        "order_id":"6777ad7e327xxx",
-        "payment_status":"COMPLETED",
-        "reference":"0882061614",
-        "matadata":{
+{
+    "order_id": "6777ad7e327xxx",
+    "payment_status": "COMPLETED",
+    "reference": "0882061614",
+    "matadata": {
         "product_id": "12345",
         "color": "blue",
         "size": "L",
         "custom_notes": "Please gift-wrap this item."
-    },
     }
+}
 ```
 
 - Flask
