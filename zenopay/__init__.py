@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 
 import phonenumbers
 import requests
@@ -19,47 +18,47 @@ logging.basicConfig(
 class CheckoutSchema(BaseModel):
     """Base Checkout Data Structure."""
 
-    buyer_name: str
-    buyer_phone: str
-    buyer_email: str
+    buyer_name: str = Field(
+        min_length=3,
+    )
+    buyer_phone: str = Field(
+        pattern=r"^(\+?\d{1,3})?\d{9,12}$",
+    )
+    buyer_email: str = Field(
+        pattern=r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
+    )
     amount: float = Field(ge=10)
     webhook_url: HttpUrl | str | None = None
     metadata: dict | None = None
 
     @classmethod
-    def validate_email(cls, value: str) -> str:
-        """Check email."""
-        email_pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
-        if re.match(email_pattern, value):
-            return value
-        msg = "Invalid Email Provided."
-        raise ValueError(msg)
-
-    @classmethod
     def validate_phone_number(cls, value: str) -> str | None:
         """Check phone number field."""
-        phone_number = value if isinstance(value, str) else str(value)
-        phone_number = phonenumbers.parse(value, "TZ")
+        try:
+            phone_number = value if isinstance(value, str) else str(value)
+            phone_number = phonenumbers.parse(value, "TZ")
 
-        if not phonenumbers.is_valid_number(phone_number):
+            if not phonenumbers.is_valid_number(phone_number):
+                msg = "Invalid phone number"
+                raise ValueError(msg)
+            return phonenumbers.format_number(
+                phone_number,
+                phonenumbers.PhoneNumberFormat.E164,
+            ).removeprefix("+")
+        except phonenumbers.phonenumberutil.NumberParseException as error:
             msg = "Invalid phone number"
-            raise ValueError(msg)
-        return phonenumbers.format_number(
-            phone_number,
-            phonenumbers.PhoneNumberFormat.E164,
-        ).removeprefix("+")
+            raise ValueError(msg) from error
 
-    @model_validator(mode="before")
+    @model_validator(mode="after")
     def pre_data_validation(self) -> dict:
         """Pre Data validation."""
-        self["buyer_email"] = CheckoutSchema.validate_email(self["buyer_email"])
-        self["buyer_phone"] = CheckoutSchema.validate_phone_number(self["buyer_phone"])
-        if url := self["webhook_url"]:
+        self.buyer_phone = CheckoutSchema.validate_phone_number(self.buyer_phone)
+        if url := self.webhook_url:
             url = url if isinstance(url, HttpUrl) else HttpUrl(url)
             if url.scheme != "https":
                 msg = "Url should have a https scheme."
                 raise ValueError(msg)
-            self["webhook_url"] = str(url)
+            self.webhook_url = str(url)
         return self
 
 
@@ -207,6 +206,7 @@ class ZenoPay:
             if isinstance(data, CheckoutSchema)
             else CheckoutSchema(**data).model_dump(exclude_none=True)
         )
+        print(data)
         data.update(
             {
                 "create_order": 1,
@@ -267,7 +267,7 @@ class ZenoPay:
         >>> from zenopay import ZenoPay
         >>> zenopay = ZenoPay(account_id="zpxxxx")
         >>> status= zenopay.check_order_status(order_id="12121212")
-        >>> {"status": "success","order_id": "order_id","message": "Order status updated","payment_status": "PENDING"}
+        >>> {'status': 'success', 'order_id': 'order_id', 'message': 'Order fetch successful', 'amount': '1000.00', 'payment_status': 'PENDING'}
 
         """
         if not isinstance(order_id, str):
