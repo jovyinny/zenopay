@@ -1,18 +1,19 @@
 """ZenoPay."""
 
-from __future__ import annotations
-
 import json
 import logging
+from typing import Optional
 
 import phonenumbers
 import requests
-from pydantic import BaseModel, Field, HttpUrl, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+
+url_pattern = r"^(https?://[^\s/$.?#].[^\s]*)$"
 
 
 class CheckoutSchema(BaseModel):
@@ -28,8 +29,11 @@ class CheckoutSchema(BaseModel):
         pattern=r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
     )
     amount: float = Field(ge=10)
-    webhook_url: HttpUrl | str | None = None
-    metadata: dict | None = None
+    webhook_url: Optional[str] = Field(
+        pattern=url_pattern,
+        default=None,
+    )
+    metadata: Optional[dict] = Field(default=None)
 
     @classmethod
     def validate_phone_number(cls, value: str) -> str | None:
@@ -53,28 +57,27 @@ class CheckoutSchema(BaseModel):
     def pre_data_validation(self) -> dict:
         """Pre Data validation."""
         self.buyer_phone = CheckoutSchema.validate_phone_number(self.buyer_phone)
-        if url := self.webhook_url:
-            url = url if isinstance(url, HttpUrl) else HttpUrl(url)
-            if url.scheme != "https":
-                msg = "Url should have a https scheme."
-                raise ValueError(msg)
-            self.webhook_url = str(url)
         return self
 
 
 class CardPaymentSchema(CheckoutSchema):
     """Card Payment Data schema."""
 
-    redirect_url: str | HttpUrl | None = None
-    cancel_url: str | HttpUrl | None = None
+    redirect_url: Optional[str] = Field(
+        pattern=url_pattern,
+        default=None,
+    )
+    cancel_url: Optional[str] = Field(
+        pattern=url_pattern,
+        default=None,
+    )
     billing_country: str = Field(max_length=2, default="TZ")
 
 
 class ZenoPay:
     """ZenoPay Client."""
 
-    BASE_URL: str | HttpUrl = HttpUrl("https://api.zeno.africa")
-    BASE_URL = BASE_URL if isinstance(BASE_URL, HttpUrl) else HttpUrl(BASE_URL)
+    BASE_URL: str = "https://api.zeno.africa"
     TIMEOUT: int = 5
 
     def __init__(self, account_id: str) -> None:
@@ -206,7 +209,6 @@ class ZenoPay:
             if isinstance(data, CheckoutSchema)
             else CheckoutSchema(**data).model_dump(exclude_none=True)
         )
-        print(data)
         data.update(
             {
                 "create_order": 1,
@@ -215,7 +217,7 @@ class ZenoPay:
                 "account_id": self.account_id,
             },
         )
-        return self.post(url=str(self.BASE_URL), data=data)
+        return self.post(url=self.BASE_URL, data=data)
 
     def card_checkout(self, data: dict | CardPaymentSchema) -> dict:
         """Initiate Card Payment.
@@ -238,7 +240,7 @@ class ZenoPay:
             msg = "You must have api key and secret key set."
             raise ValueError(msg)
         _data = CardPaymentSchema(**data) if isinstance(data, dict) else data
-        url = str(self.BASE_URL) + "/card"
+        url = self.BASE_URL + "/card"
         data = _data.model_dump(exclude_none=True)
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         data.update(
@@ -273,7 +275,7 @@ class ZenoPay:
         if not isinstance(order_id, str):
             msg = f"Expected str type but received {type(order_id)}"
             raise TypeError(msg)
-        url = str(self.BASE_URL) + "/order-status"
+        url = self.BASE_URL + "/order-status"
         data = {
             "check_status": 1,
             "order_id": order_id,
