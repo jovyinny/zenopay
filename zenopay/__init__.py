@@ -140,7 +140,6 @@ class ZenoPay:
         data: dict,
         *,
         is_json: bool = False,
-        headers: dict | None = None,
     ) -> dict:
         """Handle post Request.
 
@@ -148,13 +147,11 @@ class ZenoPay:
             url: str
             data: dict
             is_json:bool= False, whether data is to be sent as JSON
-            headers: Optional[dict], if not provided uses default headers.
 
         Returns:
             dict
 
         """
-        headers = headers if headers else self.headers
         # Remove None values
         data = {k: v for k, v in data.items() if v}
         try:
@@ -162,14 +159,20 @@ class ZenoPay:
                 response = (
                     session.post(
                         url=url,
-                        headers=headers,
+                        headers={
+                            "Content-Type": "application/json",
+                            "Accept": "application/json",
+                        },
                         json=data,
                         timeout=self.TIMEOUT,
                     )
                     if is_json
                     else session.post(
                         url=url,
-                        headers=headers,
+                        headers={
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/x-www-form-urlencoded",
+                        },
                         data=data,
                         timeout=self.TIMEOUT,
                     )
@@ -217,7 +220,7 @@ class ZenoPay:
                 "account_id": self.account_id,
             },
         )
-        return self._post(url=self.BASE_URL, data=data)
+        return self._post(url=self.BASE_URL, data=data, is_json=False)
 
     def card_checkout(self, data: dict | CardPaymentSchema) -> dict:
         """Initiate Card Payment.
@@ -242,7 +245,6 @@ class ZenoPay:
         _data = CardPaymentSchema(**data) if isinstance(data, dict) else data
         url = self.BASE_URL + "/card"
         data = _data.model_dump(exclude_none=True)
-        headers = {"Content-Type": "application/json", "Accept": "application/json"}
         data.update(
             {
                 "billing.country": _data.billing_country,
@@ -254,7 +256,7 @@ class ZenoPay:
                 else None,
             },
         )
-        return self._post(url=url, data=data, is_json=True, headers=headers)
+        return self._post(url=url, data=data, is_json=True)
 
     def check_order_status(self, order_id: str) -> dict:
         """Check Order Status.
@@ -282,4 +284,4 @@ class ZenoPay:
             "api_key": self.api_key,
             "secret_key": self.secret_key,
         }
-        return self._post(url=url, data=data)
+        return self._post(url=url, data=data, is_json=False)
