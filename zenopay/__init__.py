@@ -134,7 +134,7 @@ class ZenoPay:
             msg = f"Expected str type but received {type(value)}"
             raise TypeError(msg)
 
-    def post(
+    def _post(
         self,
         url: str,
         data: dict,
@@ -217,7 +217,7 @@ class ZenoPay:
                 "account_id": self.account_id,
             },
         )
-        return self.post(url=self.BASE_URL, data=data)
+        return self._post(url=self.BASE_URL, data=data)
 
     def card_checkout(self, data: dict | CardPaymentSchema) -> dict:
         """Initiate Card Payment.
@@ -254,7 +254,7 @@ class ZenoPay:
                 else None,
             },
         )
-        return self.post(url=url, data=data, is_json=True, headers=headers)
+        return self._post(url=url, data=data, is_json=True, headers=headers)
 
     def check_order_status(self, order_id: str) -> dict:
         """Check Order Status.
@@ -282,4 +282,4 @@ class ZenoPay:
             "api_key": self.api_key,
             "secret_key": self.secret_key,
         }
-        return self.post(url=url, data=data)
+        return self._post(url=url, data=data)
