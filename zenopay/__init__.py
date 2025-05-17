@@ -78,7 +78,7 @@ class ZenoPay:
     """ZenoPay Client."""
 
     BASE_URL: str = "https://api.zeno.africa"
-    TIMEOUT: int = 5
+    TIMEOUT: int = 10
 
     def __init__(self, account_id: str) -> None:
         """Initialize.
