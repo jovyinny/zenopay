@@ -138,15 +138,12 @@ class ZenoPay:
         self,
         url: str,
         data: dict,
-        *,
-        is_json: bool = False,
     ) -> dict:
         """Handle post Request.
 
         Args:
             url: str
             data: dict
-            is_json:bool= False, whether data is to be sent as JSON
 
         Returns:
             dict
@@ -156,26 +153,14 @@ class ZenoPay:
         data = {k: v for k, v in data.items() if v}
         try:
             with requests.Session() as session:
-                response = (
-                    session.post(
-                        url=url,
-                        headers={
-                            "Content-Type": "application/json",
-                            "Accept": "application/json",
-                        },
-                        json=data,
-                        timeout=self.TIMEOUT,
-                    )
-                    if is_json
-                    else session.post(
-                        url=url,
-                        headers={
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "Accept": "application/x-www-form-urlencoded",
-                        },
-                        data=data,
-                        timeout=self.TIMEOUT,
-                    )
+                response = session.post(
+                    url=url,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                    },
+                    json=data,
+                    timeout=self.TIMEOUT,
                 )
                 response.raise_for_status()
 
@@ -220,7 +205,7 @@ class ZenoPay:
                 "account_id": self.account_id,
             },
         )
-        return self._post(url=self.BASE_URL, data=data, is_json=False)
+        return self._post(url=self.BASE_URL, data=data)
 
     def card_checkout(self, data: dict | CardPaymentSchema) -> dict:
         """Initiate Card Payment.
@@ -256,7 +241,7 @@ class ZenoPay:
                 else None,
             },
         )
-        return self._post(url=url, data=data, is_json=True)
+        return self._post(url=url, data=data)
 
     def check_order_status(self, order_id: str) -> dict:
         """Check Order Status.
@@ -284,4 +269,4 @@ class ZenoPay:
             "api_key": self.api_key,
             "secret_key": self.secret_key,
         }
-        return self._post(url=url, data=data, is_json=False)
+        return self._post(url=url, data=data)
