@@ -2,11 +2,13 @@
 
 import json
 import logging
-from typing import Optional
+import re
+from dataclasses import asdict, dataclass, field
+from typing import Optional, Union
 
 import phonenumbers
 import requests
-from pydantic import BaseModel, Field, model_validator
+from phonenumbers import PhoneNumber, geocoder
 
 logging.basicConfig(
     level=logging.INFO,
@@ -14,64 +16,106 @@ logging.basicConfig(
 )
 
 url_pattern = r"^(https?://[^\s/$.?#].[^\s]*)$"
+email_pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+phone_pattern = r"^(\+?25[5|4])?\d{9,10}$"
 
 
-class CheckoutSchema(BaseModel):
-    """Base Checkout Data Structure."""
+@dataclass
+class CheckoutSchema:
+    """Base Checkout Structure."""
 
-    buyer_name: str = Field(
-        min_length=3,
+    buyer_name: str
+    buyer_phone: str
+    buyer_email: str
+    amount: float
+    webhook_url: Optional[str] = None
+    metadata: Optional[dict] = None
+    _country: Optional[str] = field(
+        default="TZ",
+        init=False,
     )
-    buyer_phone: str = Field(
-        pattern=r"^(\+?\d{1,3})?\d{9,12}$",
-    )
-    buyer_email: str = Field(
-        pattern=r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
-    )
-    amount: float = Field(ge=10)
-    webhook_url: Optional[str] = Field(
-        pattern=url_pattern,
-        default=None,
-    )
-    metadata: Optional[dict] = Field(default=None)
 
-    @classmethod
-    def validate_phone_number(cls, value: str) -> str | None:
+    @property
+    def country(self) -> str:
+        return self._country
+
+    @country.setter
+    def country(self, value: str):
+        self._country = value
+
+    def __post_init__(self):
+        """Validate fields after initialization."""
+        if len(self.buyer_name) < 3:
+            msg = "buyer_name must be at least 3 characters"
+            raise ValueError(msg)
+
+        if not re.match(phone_pattern, self.buyer_phone):
+            msg = "Invalid phone number format"
+            raise ValueError(msg)
+        phone_number = self.validate_phone_number(self.buyer_phone)
+        self.country = geocoder.country_name_for_number(phone_number, "en")
+        self.buyer_phone = phonenumbers.format_number(
+            phone_number,
+            phonenumbers.PhoneNumberFormat.E164,
+        ).removeprefix("+")
+
+        if not re.match(email_pattern, self.buyer_email):
+            msg = "Invalid email format"
+            raise ValueError(msg)
+
+        if self.amount < 10:
+            msg = "amount must be at least 10"
+            raise ValueError(msg)
+
+        if self.webhook_url and not re.match(url_pattern, self.webhook_url):
+            msg = "Invalid webhook URL format"
+            raise ValueError(msg)
+
+    @staticmethod
+    def validate_phone_number(value: str) -> PhoneNumber:
         """Check phone number field."""
         try:
             phone_number = value if isinstance(value, str) else str(value)
             phone_number = phonenumbers.parse(value, "TZ")
-
             if not phonenumbers.is_valid_number(phone_number):
                 msg = "Invalid phone number"
                 raise ValueError(msg)
-            return phonenumbers.format_number(
-                phone_number,
-                phonenumbers.PhoneNumberFormat.E164,
-            ).removeprefix("+")
+            return phone_number
         except phonenumbers.phonenumberutil.NumberParseException as error:
             msg = "Invalid phone number"
             raise ValueError(msg) from error
 
-    @model_validator(mode="after")
-    def pre_data_validation(self) -> dict:
-        """Pre Data validation."""
-        self.buyer_phone = CheckoutSchema.validate_phone_number(self.buyer_phone)
-        return self
+    def model_dump(self, *, exclude_none: bool = False) -> dict:
+        """Convert the dataclass to a dictionary, similar to Pydantic's model_dump."""
+        data = asdict(self)
+        if exclude_none:
+            return {k: v for k, v in data.items() if v is not None}
+        return data
 
 
+@dataclass
 class CardPaymentSchema(CheckoutSchema):
     """Card Payment Data schema."""
 
-    redirect_url: Optional[str] = Field(
-        pattern=url_pattern,
-        default=None,
-    )
-    cancel_url: Optional[str] = Field(
-        pattern=url_pattern,
-        default=None,
-    )
-    billing_country: str = Field(max_length=2, default="TZ")
+    redirect_url: Optional[str] = field(default=None)
+    cancel_url: Optional[str] = field(default=None)
+    billing_country: str = field(default="TZ")
+
+    def __post_init__(self):
+        """Validate fields after initialization."""
+        super().__post_init__()
+
+        if self.redirect_url and not re.match(url_pattern, self.redirect_url):
+            msg = "Invalid redirect URL format"
+            raise ValueError(msg)
+
+        if self.cancel_url and not re.match(url_pattern, self.cancel_url):
+            msg = "Invalid cancel URL format"
+            raise ValueError(msg)
+
+        if len(self.billing_country) > 2:
+            msg = "billing_country must be at most 2 characters"
+            raise ValueError(msg)
 
 
 class ZenoPay:
@@ -99,7 +143,7 @@ class ZenoPay:
         self._secret_key = None
 
     @property
-    def api_key(self) -> str | None:
+    def api_key(self) -> Optional[str]:
         """Client API Key."""
         return self._api_key
 
@@ -113,7 +157,7 @@ class ZenoPay:
             raise TypeError(msg)
 
     @property
-    def secret_key(self) -> str | None:
+    def secret_key(self) -> Optional[str]:
         """Client API Key."""
         return self._secret_key
 
@@ -185,7 +229,7 @@ class ZenoPay:
             logging.exception(msg)
             return {"success": False, "message": "Error handling the request."}
 
-    def mobile_checkout(self, data: dict | CheckoutSchema) -> dict:
+    def mobile_checkout(self, data: Union[dict, CheckoutSchema]) -> dict:
         """Initiate Mobile paymennt.
 
         Args:
@@ -207,11 +251,8 @@ class ZenoPay:
         if not all([self.api_key, self.secret_key]):
             msg = "You must have api key and secret key set."
             raise ValueError(msg)
-        data = (
-            data.model_dump(exclude_none=True)
-            if isinstance(data, CheckoutSchema)
-            else CheckoutSchema(**data).model_dump(exclude_none=True)
-        )
+        _data = data if isinstance(data, CheckoutSchema) else CheckoutSchema(**data)
+        data = _data.model_dump(exclude_none=True)
         data.update(
             {
                 "create_order": 1,
@@ -220,9 +261,16 @@ class ZenoPay:
                 "account_id": self.account_id,
             },
         )
-        return self._post(url=self.BASE_URL, data=data, is_json=False)
+        self.BASE_URL = (
+            f"{self.BASE_URL}/KE" if _data.country.lower() == "kenya" else self.BASE_URL
+        )
+        return self._post(
+            url=self.BASE_URL,
+            data=data,
+            is_json=False,
+        )
 
-    def card_checkout(self, data: dict | CardPaymentSchema) -> dict:
+    def card_checkout(self, data: Union[dict, CardPaymentSchema]) -> dict:
         """Initiate Card Payment.
 
         Args:
@@ -247,7 +295,7 @@ class ZenoPay:
         data = _data.model_dump(exclude_none=True)
         data.update(
             {
-                "billing.country": _data.billing_country,
+                "billing.country": _data.billing_country or _data.country,
                 "account_id": self.account_id,
                 "api_key": self.api_key,
                 "secret_key": self.secret_key,
