@@ -30,6 +30,8 @@ NOTE: Webhook url set should be the endpoint that receives a POST request from Z
 
 To initiate a mobile checkout, you will need to set client's api_key and sceret_key. You can get these from your Zenopay account.
 
+Currently, supports only support Tanzania and Kenya.
+
 ```python
 zenopay_client.api_key=os.getenv('ZENOPAY_API_KEY')
 zenopay_client.secret_key=os.getenv('ZENOPAY_SECRET_KEY')
@@ -37,7 +39,7 @@ zenopay_client.secret_key=os.getenv('ZENOPAY_SECRET_KEY')
 # Data to be sent to Zenopay
 data = {
     "buyer_name": "jovine me",
-    "buyer_phone": "0718193343",
+    "buyer_phone": "0718193343", # Suggested phone number to have country code
     "buyer_email": "jovinerobotics@gmail.com",
     "amount": 1000,
     "webhook_url": "https://jovine.me/zenopay/webhook",
@@ -73,7 +75,7 @@ data = {
     "buyer_email": "jovinerobotics@gmail.com",
     "amount": 1000,
     "webhook_url": "https://jovine.me/zenopay/webhook",
-    "billling_country": "TZ",
+    "billing_country": "TZ",
     "redirect_url": "https://jovine.me/zenopay/redirect",
     "metadata":{
         "product_id": "12345",
